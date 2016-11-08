@@ -19,10 +19,11 @@ package com.hazelcast.client.impl.protocol.template;
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.annotation.Since;
-import com.hazelcast.client.impl.protocol.constants.ResponseMessageConst;
 import com.hazelcast.client.impl.protocol.constants.EventMessageConst;
+import com.hazelcast.client.impl.protocol.constants.ResponseMessageConst;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+
 import java.util.List;
 import java.util.Map;
 
@@ -232,10 +233,10 @@ public interface MapCodecTemplate {
      * Scope of the lock is this map only. Acquired lock is only for the key in this map. Locks are re-entrant,
      * so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
      *
-     * @param name     Name of the map.
-     * @param key      Key for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @param ttl      The duration in milliseconds after which this entry shall be deleted. O means infinite.
+     * @param name        Name of the map.
+     * @param key         Key for the map entry.
+     * @param threadId    The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param ttl         The duration in milliseconds after which this entry shall be deleted. O means infinite.
      * @param referenceId The client-wide unique id for this request. It is used to make the request idempotent by sending the same reference id during retries.
      */
     @Request(id = 19, retryable = true, response = ResponseMessageConst.VOID, partitionIdentifier = "key")
@@ -247,11 +248,11 @@ public interface MapCodecTemplate {
      * purposes and lies dormant until one of two things happens the lock is acquired by the current thread, or
      * the specified waiting time elapses.
      *
-     * @param name     Name of the map.
-     * @param key      Key for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @param lease    time in milliseconds to wait before releasing the lock.
-     * @param timeout  maximum time to wait for getting the lock.
+     * @param name        Name of the map.
+     * @param key         Key for the map entry.
+     * @param threadId    The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param lease       time in milliseconds to wait before releasing the lock.
+     * @param timeout     maximum time to wait for getting the lock.
      * @param referenceId The client-wide unique id for this request. It is used to make the request idempotent by sending the same reference id during retries.
      * @return Returns true if successful, otherwise returns false
      */
@@ -274,9 +275,9 @@ public interface MapCodecTemplate {
      * then the lock is released.  If the current thread is not the holder of this lock,
      * then ILLEGAL_MONITOR_STATE is thrown.
      *
-     * @param name     name of map
-     * @param key      Key for the map entry to unlock
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param name        name of map
+     * @param key         Key for the map entry to unlock
+     * @param threadId    The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param referenceId The client-wide unique id for this request. It is used to make the request idempotent by sending the same reference id during retries.
      */
     @Request(id = 22, retryable = true, response = ResponseMessageConst.VOID, partitionIdentifier = "key")
@@ -684,8 +685,8 @@ public interface MapCodecTemplate {
      * Releases the lock for the specified key regardless of the lock owner.It always successfully unlocks the key,
      * never blocks,and returns immediately.
      *
-     * @param name name of map
-     * @param key  the key of the map entry.
+     * @param name        name of map
+     * @param key         the key of the map entry.
      * @param referenceId The client-wide unique id for this request. It is used to make the request idempotent by sending the same reference id during retries.
      */
     @Request(id = 55, retryable = true, response = ResponseMessageConst.VOID, partitionIdentifier = "key")

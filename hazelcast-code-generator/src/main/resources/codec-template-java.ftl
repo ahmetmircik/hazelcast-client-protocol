@@ -158,7 +158,7 @@ public final class ${model.className} {
             dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
             if (${varName} != null) {
 </#if>
-<@sizeTextInternal varName=varName type=type/>
+<@sizeTextInternal varName=varName type=type isNullable=isNullable/>
 <#if isNullable>
             }
 </#if>
@@ -174,7 +174,7 @@ public final class ${model.className} {
 </#macro>
 
 <#--SIZE MACRO -->
-<#macro sizeTextInternal varName type>
+<#macro sizeTextInternal varName type isNullable>
 <#local cat= util.getTypeCategory(type)>
 <#switch cat>
     <#case "OTHER">
@@ -192,7 +192,7 @@ public final class ${model.className} {
         <#local genericType= util.getGenericType(type)>
         <#local n= varName>
             for (${genericType} ${varName}_item : ${varName} ) {
-        <@sizeText varName="${n}_item"  type=genericType/>
+              <@sizeText varName="${n}_item"  type=genericType isNullable=isNullable/>
             }
         <#break >
     <#case "ARRAY">
@@ -217,7 +217,8 @@ public final class ${model.className} {
 <#--SETTER NULL CHECK MACRO -->
 <#macro setterText varName type isNullable=false>
 <#local isNullVariableName= "${varName}_isNull">
-<#if isNullable>
+<#local cat= util.getTypeCategory(type)>
+<#if isNullable && cat != "COLLECTION">
         boolean ${isNullVariableName};
         if (${varName} == null) {
             ${isNullVariableName} = true;
@@ -226,16 +227,23 @@ public final class ${model.className} {
             ${isNullVariableName}= false;
             clientMessage.set(${isNullVariableName});
 </#if>
-<@setterTextInternal varName=varName type=type/>
-<#if isNullable>
+<@setterTextInternal varName=varName type=type isNullable=isNullable/>
+<#if isNullable && cat != "COLLECTION">
         }
 </#if>
 </#macro>
 
 <#--SETTER MACRO -->
-<#macro setterTextInternal varName type>
+<#macro setterTextInternal varName type isNullable=false>
     <#local cat= util.getTypeCategory(type)>
     <#if cat == "OTHER">
+        <#if isNullable>
+            if (${varName} == null) {
+                   clientMessage.set(true);
+            } else {
+                  clientMessage.set(false);
+            }
+        </#if>
         clientMessage.set(${varName});
     </#if>
     <#if cat == "CUSTOM">
@@ -246,7 +254,7 @@ public final class ${model.className} {
         <#local itemType= util.getGenericType(type)>
         <#local itemTypeVar= varName + "_item">
         for (${itemType} ${itemTypeVar} : ${varName}) {
-        <@setterTextInternal varName=itemTypeVar type=itemType/>
+        <@setterTextInternal varName=itemTypeVar type=itemType isNullable=isNullable/>
         }
     </#if>
     <#if cat == "ARRAY">
@@ -271,42 +279,56 @@ public final class ${model.className} {
 <#macro getterText varName type isNullable=false isEvent=false>
         ${type} ${varName} <#if !util.isPrimitive(type)>= null</#if>;
 <#local isNullVariableName= "${varName}_isNull">
-<#if isNullable>
+<#local cat= util.getTypeCategory(type)>
+<#if isNullable && cat != "COLLECTION">
         boolean ${isNullVariableName} = clientMessage.getBoolean();
         if (!${isNullVariableName}) {
 </#if>
-<@getterTextInternal varName=varName varType=type/>
+<@getterTextInternal varName=varName varType=type isNullable=isNullable/>
 <#if !isEvent>
             parameters.${varName} = ${varName};
 </#if>
-<#if isNullable>
+<#if isNullable && cat != "COLLECTION">
         }
 </#if>
 </#macro>
 
-<#macro getterTextInternal varName varType>
+
+<#macro getterTextOtherProcessor varName varType>
+<#switch varType>
+                <#case util.DATA_FULL_NAME>
+            ${varName} = clientMessage.getData();
+                    <#break >
+                <#case "java.lang.Integer">
+            ${varName} = clientMessage.getInt();
+                    <#break >
+                <#case "java.lang.Long">
+            ${varName} = clientMessage.getLong();
+                    <#break >
+                <#case "java.lang.Boolean">
+            ${varName} = clientMessage.getBoolean();
+                    <#break >
+                <#case "java.lang.String">
+            ${varName} = clientMessage.getStringUtf8();
+                    <#break >
+                <#default>
+            ${varName} = clientMessage.get${util.capitalizeFirstLetter(varType)}();
+        </#switch>
+</#macro>
+
+<#macro getterTextInternal varName varType isNullable=false>
 <#local cat= util.getTypeCategory(varType)>
 <#switch cat>
     <#case "OTHER">
-        <#switch varType>
-            <#case util.DATA_FULL_NAME>
-        ${varName} = clientMessage.getData();
-                <#break >
-            <#case "java.lang.Integer">
-        ${varName} = clientMessage.getInt();
-                <#break >
-            <#case "java.lang.Long">
-        ${varName} = clientMessage.getLong();
-                <#break >
-            <#case "java.lang.Boolean">
-        ${varName} = clientMessage.getBoolean();
-                <#break >
-            <#case "java.lang.String">
-        ${varName} = clientMessage.getStringUtf8();
-                <#break >
-            <#default>
-        ${varName} = clientMessage.get${util.capitalizeFirstLetter(varType)}();
-        </#switch>
+            <#if isNullable>
+                if (clientMessage.getBoolean()) {
+                       ${varName} = null;
+                } else {
+                    <@getterTextOtherProcessor varName=varName varType=varType/>
+                }
+            <#else>
+                 <@getterTextOtherProcessor varName=varName varType=varType/>
+            </#if>
         <#break >
     <#case "CUSTOM">
             ${varName} = ${util.getTypeCodec(varType)}.decode(clientMessage);
@@ -321,7 +343,7 @@ public final class ${model.className} {
             ${varName} = new ${collectionType}<${itemVariableType}>(${sizeVariableName});
             for (int ${indexVariableName} = 0;${indexVariableName}<${sizeVariableName};${indexVariableName}++) {
                 ${itemVariableType} ${itemVariableName};
-                <@getterTextInternal varName=itemVariableName varType=itemVariableType/>
+                <@getterTextInternal varName=itemVariableName varType=itemVariableType isNullable=isNullable/>
                 ${varName}.add(${itemVariableName});
             }
         <#break >

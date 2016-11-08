@@ -177,14 +177,20 @@ public interface EventResponseTemplate {
 
 
     /**
-     * @param key The key for the entry.
+     * @param key        key of invalidated entry
+     * @param sequence   sequence numbers of invalidation event
+     * @param sourceUuid sourceUuid of invalidation event
+     * @param mapName    name of underlying map which near-cache listens
      */
     @EventResponse(EventMessageConst.EVENT_IMAPINVALIDATION)
-    void IMapInvalidation(@Nullable Data key);
+    void IMapInvalidation(@Nullable Data key, long sequence, String sourceUuid, String mapName);
 
     /**
-     * @param keys The keys for the entries in batch invalidation.
+     * @param keys        The keys for the entries in batch invalidation.
+     * @param sequences   sequence numbers of invalidation events
+     * @param sourceUuids sourceUuid of invalidation events
+     * @param mapName     name of underlying map which near-cache listens
      */
     @EventResponse(EventMessageConst.EVENT_IMAPBATCHINVALIDATION)
-    void IMapBatchInvalidation(List<Data> keys);
+    void IMapBatchInvalidation(@Nullable List<Data> keys, List<Long> sequences, List<String> sourceUuids, String mapName);
 }
